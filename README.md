@@ -4,22 +4,83 @@ A vintage-styled wireless telegraph application with real-time messaging powered
 
 ## Features
 
-- 🔐 **Magic Link Authentication** - Secure email-based login via Supabase
+- 🔐 **Magic Link Authentication** - Secure email-based login
 - 📡 **Real-time Messaging** - Messages broadcast instantly to all connected users
 - 🎵 **Morse Code Audio** - Hear incoming messages in authentic Morse code beeps
 - 📻 **Vintage UI** - Beautiful retro-styled interface inspired by early wireless telegraphy
 
-## Setup Instructions
+## Quick Start
 
-### 1. Supabase Configuration
+### Running the Application
+
+Simply open `index.html` in a web browser or serve it with a local web server:
+
+```bash
+# Using Python
+python -m http.server 8000
+
+# Using Node.js (http-server)
+npx http-server
+
+# Using PHP
+php -S localhost:8000
+```
+
+Then navigate to `http://localhost:8000` in your browser.
+
+### Using the App
+
+1. Enter your email address on the login screen
+2. Check your email for the magic link
+3. Click the link to authenticate
+4. Start sending messages to all connected users!
+
+## File Structure
+
+```
+marconi-wireless/
+├── index.html      # Main HTML structure
+├── styles.css      # All styling (separated from HTML)
+├── app.js          # Application logic and Supabase integration
+└── README.md       # This file
+```
+
+## How It Works
+
+### Authentication Flow
+
+1. User enters their email address
+2. Magic link is sent to their email
+3. User clicks the link to authenticate
+4. App displays the messaging interface
+
+### Messaging Flow
+
+1. User types a message and clicks "SEND TRANSMISSION"
+2. Message is converted to Morse code
+3. Message is broadcast to all connected users in real-time
+4. Morse code audio plays automatically for incoming messages
+
+## Credits
+
+Built with:
+- [Supabase](https://supabase.com) - Backend and real-time infrastructure
+- Vanilla JavaScript - No frameworks needed!
+- Web Audio API - For authentic Morse code beeps
+
+---
+
+## Developer Setup
+
+### Supabase Configuration
 
 You need to configure your Supabase credentials in `app.js`:
 
 1. Open `app.js`
 2. Replace `YOUR_SUPABASE_ANON_KEY` with your actual Supabase anonymous key
-3. Verify the `SUPABASE_URL` matches your project URL: `https://afswezwmfjsgupgdcybl.supabase.co`
+3. Verify the `SUPABASE_URL` matches your project URL
 
-### 2. Supabase Database Setup
+### Supabase Database Setup
 
 Your Supabase project should have a `morse_messages` table with the following schema:
 
@@ -52,60 +113,14 @@ WITH CHECK (true);
 ALTER PUBLICATION supabase_realtime ADD TABLE morse_messages;
 ```
 
-### 3. Supabase Authentication Setup
+### Supabase Authentication Setup
 
 1. In your Supabase dashboard, go to **Authentication > Providers**
 2. Enable **Email** provider
 3. Configure email templates if desired
 4. Set up your site URL in **Authentication > URL Configuration**
 
-### 4. Running the Application
-
-Simply open `index.html` in a web browser or serve it with a local web server:
-
-```bash
-# Using Python
-python -m http.server 8000
-
-# Using Node.js (http-server)
-npx http-server
-
-# Using PHP
-php -S localhost:8000
-```
-
-Then navigate to `http://localhost:8000` in your browser.
-
-## File Structure
-
-```
-marconi-wireless/
-├── index.html      # Main HTML structure
-├── styles.css      # All styling (separated from HTML)
-├── app.js          # Application logic and Supabase integration
-├── .env.example    # Example environment configuration
-└── README.md       # This file
-```
-
-## How It Works
-
-### Authentication Flow
-
-1. User enters their email address
-2. Supabase sends a magic link to their email
-3. User clicks the link to authenticate
-4. App displays the messaging interface
-
-### Messaging Flow
-
-1. User types a message and clicks "SEND TRANSMISSION"
-2. Message is converted to Morse code
-3. Message is inserted into Supabase `morse_messages` table
-4. Supabase broadcasts the new message to all subscribed clients
-5. All connected users receive the message in real-time
-6. Morse code audio plays automatically for incoming messages
-
-## Payload Structure
+### Message Payload Structure
 
 Messages are stored in the `payload` JSONB column with this structure:
 
@@ -138,10 +153,3 @@ Messages are stored in the `payload` JSONB column with this structure:
 - Make sure your Supabase URL and anon key are correct
 - Check that the site URL is configured in Supabase settings
 - Verify RLS policies are set up correctly
-
-## Credits
-
-Built with:
-- [Supabase](https://supabase.com) - Backend and real-time infrastructure
-- Vanilla JavaScript - No frameworks needed!
-- Web Audio API - For authentic Morse code beeps

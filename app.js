@@ -240,7 +240,7 @@ sendLinkBtn.addEventListener("click", async () => {
     const { error } = await _supabase.auth.signInWithOtp({ 
         email,
         options: {
-            emailRedirectTo: window.location.href
+            emailRedirectTo: window.location.origin + window.location.pathname
         }
     });
     

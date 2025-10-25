@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marconi Wireless Telegraph</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 2px solid #d4af37;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #d4af37;
+            font-size: 2em;
+        }
+        
+        .header p {
+            margin: 5px 0;
+            color: #b0b0b0;
+        }
+        
+        .transmit-section {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border: 1px solid #d4af37;
+        }
+        
+        .transmit-section h2 {
+            margin-top: 0;
+            color: #d4af37;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            background: #0f0f1e;
+            color: #f0f0f0;
+            border: 2px solid #d4af37;
+            border-radius: 5px;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background: #d4af37;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button:hover {
+            background: #f0c24a;
+        }
+        
+        button:active {
+            background: #b8942d;
+        }
+        
+        .messages-section {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #d4af37;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .messages-section h2 {
+            margin-top: 0;
+            color: #d4af37;
+        }
+        
+        .message {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #d4af37;
+        }
+        
+        .message-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #f0f0f0;
+        }
+        
+        .message-morse {
+            font-size: 18px;
+            color: #4a9eff;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            background: rgba(74, 158, 255, 0.2);
+            color: #4a9eff;
+            border: 1px solid #4a9eff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ MARCONI WIRELESS TELEGRAPH ⚡</h1>
+            <p>RMS TITANIC - SHIP-TO-SHORE COMMUNICATION</p>
+            <p>All transmissions are broadcast to every station</p>
+        </div>
+        
+        <div class="status" id="status">Connecting to wireless network...</div>
+        
+        <div class="transmit-section">
+            <h2>📡 Transmit Message</h2>
+            <textarea id="messageInput" placeholder="Enter your message here..."></textarea>
+            <button onclick="transmitMessage()">SEND TRANSMISSION</button>
+        </div>
+        
+        <div class="messages-section">
+            <h2>📻 Received Transmissions</h2>
+            <div id="messagesContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Morse code dictionary
+        const morseCode = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+            'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+            'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..', '0': '-----', '1': '.----', '2': '..---',
+            '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+            '8': '---..', '9': '----.', ' ': '/'
+        };
+
+        // Audio context for generating beeps
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Convert text to Morse code
+        function textToMorse(text) {
+            return text.toUpperCase().split('').map(char => {
+                return morseCode[char] || '';
+            }).join(' ');
+        }
+
+        // Play Morse code sound
+        async function playMorse(morse) {
+            const ditDuration = 80; // milliseconds for a dit
+            const dahDuration = ditDuration * 3;
+            const symbolGap = ditDuration;
+            const letterGap = ditDuration * 3;
+            const wordGap = ditDuration * 7;
+            
+            for (let i = 0; i < morse.length; i++) {
+                const symbol = morse[i];
+                
+                if (symbol === '.') {
+                    await playBeep(600, ditDuration);
+                    await sleep(symbolGap);
+                } else if (symbol === '-') {
+                    await playBeep(600, dahDuration);
+                    await sleep(symbolGap);
+                } else if (symbol === ' ') {
+                    await sleep(letterGap);
+                } else if (symbol === '/') {
+                    await sleep(wordGap);
+                }
+            }
+        }
+
+        // Generate a beep sound
+        function playBeep(frequency, duration) {
+            return new Promise(resolve => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration / 1000);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + duration / 1000);
+                
+                setTimeout(resolve, duration);
+            });
+        }
+
+        // Sleep function for delays
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Storage key for messages
+        const MESSAGES_KEY = 'marconi-messages';
+        
+        // Load and display messages
+        async function loadMessages() {
+            try {
+                const result = await window.storage.list('msg:', true);
+                if (result && result.keys) {
+                    // Sort keys to get messages in order
+                    const sortedKeys = result.keys.sort();
+                    const messagesContainer = document.getElementById('messagesContainer');
+                    messagesContainer.innerHTML = '';
+                    
+                    // Load each message
+                    for (const key of sortedKeys) {
+                        const msgResult = await window.storage.get(key, true);
+                        if (msgResult) {
+                            const msg = JSON.parse(msgResult.value);
+                            displayMessage(msg, false);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('No messages yet');
+            }
+        }
+
+        // Display a message
+        function displayMessage(msg, playSound) {
+            const messagesContainer = document.getElementById('messagesContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            const time = new Date(msg.timestamp).toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-text">${msg.text}</div>
+                <div class="message-morse">${msg.morse}</div>
+                <div class="message-time">Transmitted at ${time}</div>
+            `;
+            
+            messagesContainer.insertBefore(messageDiv, messagesContainer.firstChild);
+            
+            if (playSound) {
+                playMorse(msg.morse);
+            }
+        }
+
+        // Transmit a message
+        async function transmitMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text) {
+                alert('Please enter a message to transmit!');
+                return;
+            }
+            
+            const morse = textToMorse(text);
+            const timestamp = Date.now();
+            
+            const message = {
+                text: text,
+                morse: morse,
+                timestamp: timestamp
+            };
+            
+            // Save to shared storage with timestamp as part of key
+            try {
+                await window.storage.set(`msg:${timestamp}`, JSON.stringify(message), true);
+                input.value = '';
+                // Message will be displayed by the polling function
+            } catch (error) {
+                console.error('Error saving message:', error);
+                alert('Failed to transmit message. Please try again.');
+            }
+        }
+
+        // Poll for new messages
+        let lastCheckTime = Date.now();
+        async function checkForNewMessages() {
+            try {
+                const result = await window.storage.list('msg:', true);
+                if (result && result.keys) {
+                    for (const key of result.keys) {
+                        const timestamp = parseInt(key.split(':')[1]);
+                        if (timestamp > lastCheckTime) {
+                            const msgResult = await window.storage.get(key, true);
+                            if (msgResult) {
+                                const msg = JSON.parse(msgResult.value);
+                                displayMessage(msg, true);
+                            }
+                        }
+                    }
+                    if (result.keys.length > 0) {
+                        const latestKey = result.keys.sort().pop();
+                        const timestamp = parseInt(latestKey.split(':')[1]);
+                        lastCheckTime = Math.max(lastCheckTime, timestamp);
+                    }
+                }
+            } catch (error) {
+                console.log('Error checking messages:', error);
+            }
+        }
+
+        // Initialize
+        document.getElementById('status').textContent = '✓ Connected to wireless network - Ready to transmit';
+        loadMessages();
+        
+        // Check for new messages every 2 seconds
+        setInterval(checkForNewMessages, 2000);
+        
+        // Allow Enter to send (Shift+Enter for new line)
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                transmitMessage();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -206,4 +206,28 @@ button:disabled {
     background: rgba(74, 158, 255, 0.2);
     color: #4a9eff;
     border: 1px solid #4a9eff;
+    transition: all 0.3s ease;
+}
+
+.status.connected {
+    background: rgba(46, 213, 115, 0.2);
+    color: #2ed573;
+    border-color: #2ed573;
+}
+
+.status.error {
+    background: rgba(255, 71, 87, 0.2);
+    color: #ff4757;
+    border-color: #ff4757;
+}
+
+/* Pulse animation for connected status */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.status.connected::before {
+    content: "● ";
+    animation: pulse 2s ease-in-out infinite;
 }

@@ -138,9 +138,20 @@ Messages are stored in the `payload` JSONB column with this structure:
 
 ### Messages not appearing in real-time
 
+**Most Common Fix:** Make sure you're testing with TWO separate browsers/users! Realtime only broadcasts to OTHER users, not the sender.
+
+Other checks:
+- Open browser console (F12) and look for `"Channel status: SUBSCRIBED"`
 - Check that realtime is enabled for the `morse_messages` table
 - Verify your RLS policies allow authenticated users to read messages
-- Check browser console for connection errors
+- Look for any connection errors in the console
+
+### No Morse code sound playing
+
+- Click anywhere on the page first (browsers require user interaction before playing audio)
+- Check that your browser audio isn't muted
+- Try a different browser (some have stricter autoplay policies)
+- Look for audio errors in the browser console
 
 ### Magic link not sending
 
@@ -153,3 +164,14 @@ Messages are stored in the `payload` JSONB column with this structure:
 - Make sure your Supabase URL and anon key are correct
 - Check that the site URL is configured in Supabase settings
 - Verify RLS policies are set up correctly
+
+## Teaching Notes
+
+This project demonstrates several important web development concepts:
+
+1. **Real-time Communication** - Messages broadcast instantly using WebSockets
+2. **Authentication** - Passwordless magic link login
+3. **Database Security** - Row Level Security (RLS) policies control access
+4. **Web Audio API** - Generating sounds programmatically
+5. **Async/Await** - Modern JavaScript for handling asynchronous operations
+6. **Browser APIs** - Working with browser limitations (autoplay policies)

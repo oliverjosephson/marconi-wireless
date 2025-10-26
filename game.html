@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Titanic Wireless Operator - Historical Scenario</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Extra styles just for the game page */
+        .scenario-select {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .ship-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #d4af37;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            max-width: 300px;
+        }
+        
+        .ship-card:hover {
+            border-color: #f0c24a;
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-5px);
+        }
+        
+        .ship-card h3 {
+            color: #d4af37;
+            margin-top: 0;
+        }
+        
+        .game-container {
+            display: none;
+        }
+        
+        .message-display {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #4a9eff;
+            margin-bottom: 20px;
+            min-height: 150px;
+        }
+        
+        .morse-display {
+            font-size: 24px;
+            color: #4a9eff;
+            letter-spacing: 4px;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .english-display {
+            font-size: 18px;
+            color: #f0f0f0;
+            line-height: 1.6;
+        }
+        
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .choice-btn {
+            width: 100%;
+            text-align: left;
+            padding: 15px;
+            font-size: 16px;
+        }
+        
+        .choice-btn.correct {
+            background: #2ed573;
+            animation: pulse-green 0.5s ease;
+        }
+        
+        .choice-btn.wrong {
+            background: #ff4757;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes pulse-green {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        .score-display {
+            background: rgba(74, 158, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #4a9eff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .game-over {
+            display: none;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #d4af37;
+            text-align: center;
+        }
+        
+        .game-over h2 {
+            color: #d4af37;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .historical-fact {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #4a9eff;
+            margin: 15px 0;
+            font-style: italic;
+            color: #b0b0b0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚡ WIRELESS OPERATOR SIMULATOR ⚡</h1>
+            <p>APRIL 14-15, 1912 - THE NIGHT TITANIC SANK</p>
+            <p>Experience history as a wireless telegraph operator</p>
+        </div>
+        
+        <!-- Scenario Selection Screen -->
+        <div id="scenarioSelect">
+            <div style="background: rgba(255, 255, 255, 0.08); padding: 25px; border-radius: 10px; border: 1px solid #d4af37; margin-bottom: 20px;">
+                <h2 style="color: #d4af37; text-align: center;">Choose Your Station</h2>
+                <p style="text-align: center; color: #b0b0b0;">Select which ship you will operate from. Your decisions will change history...</p>
+            </div>
+            
+            <div class="scenario-select">
+                <!-- Carpathia Card -->
+                <div class="ship-card" onclick="startGame('carpathia')">
+                    <h3>🚢 RMS CARPATHIA</h3>
+                    <p><strong>Operator:</strong> Harold Cottam</p>
+                    <p><strong>Distance:</strong> 58 miles from Titanic</p>
+                    <p><strong>Role:</strong> Receive distress calls and coordinate rescue</p>
+                    <p style="color: #2ed573; margin-top: 15px;">⭐ The hero ship that saved 705 lives</p>
+                </div>
+                
+                <!-- Titanic Card -->
+                <div class="ship-card" onclick="startGame('titanic')">
+                    <h3>🚢 RMS TITANIC</h3>
+                    <p><strong>Operator:</strong> Jack Phillips</p>
+                    <p><strong>Status:</strong> Maiden voyage to New York</p>
+                    <p><strong>Role:</strong> Handle incoming messages and send distress signals</p>
+                    <p style="color: #ff4757; margin-top: 15px;">⚠️ Navigate the crucial decisions of that fateful night</p>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 30px;">
+                <a href="index.html"><button>← Back to Main Telegraph</button></a>
+            </div>
+        </div>
+        
+        <!-- Game Screen (hidden initially) -->
+        <div class="game-container" id="gameContainer">
+            <div class="score-display" id="scoreDisplay">
+                Messages: <span id="messageCount">0</span> | 
+                Correct Decisions: <span id="correctCount">0</span> | 
+                Wrong Decisions: <span id="wrongCount">0</span>
+            </div>
+            
+            <div class="message-display">
+                <div class="morse-display" id="morseDisplay">Waiting for transmission...</div>
+                <div class="english-display" id="englishDisplay">Click "Next Message" to begin your duty</div>
+            </div>
+            
+            <div class="choices" id="choicesContainer">
+                <button class="choice-btn" onclick="nextMessage()">📡 NEXT MESSAGE</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="location.reload()">🔄 Restart Scenario</button>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div class="game-over" id="gameOver">
+            <h2 id="gameOverTitle">Mission Complete</h2>
+            <div id="gameOverStats"></div>
+            <div class="historical-fact" id="historicalFact"></div>
+            <button onclick="location.reload()" style="margin-top: 20px;">Play Again</button>
+            <a href="index.html"><button>← Back to Main Telegraph</button></a>
+        </div>
+    </div>
+
+    <!-- Audio context for Morse code (same as main app) -->
+    <script>
+        // ============================================
+        // MORSE CODE SYSTEM (Same as main app)
+        // ============================================
+        
+        // This is our "dictionary" that converts letters to dots and dashes
+        const morseCode = {
+            'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+            'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+            'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+            'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+            'Y': '-.--', 'Z': '--..', '0': '-----', '1': '.----', '2': '..---',
+            '3': '...--', '4': '....-', '5': '.....', '6': '-....', '7': '--...',
+            '8': '---..', '9': '----.', ' ': '/'
+        };
+
+        // Audio context - this is what makes the beep sounds!
+        let audioContext = null;
+
+        // Initialize audio context (browsers require user interaction first)
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                console.log("🔊 Audio system ready!");
+            }
+            return audioContext;
+        }
+
+        // Convert regular text into Morse code dots and dashes
+        function textToMorse(text) {
+            return text.toUpperCase().split('').map(char => {
+                return morseCode[char] || '';
+            }).join(' ');
+        }
+
+        // Play the Morse code as beeping sounds
+        async function playMorse(morse) {
+            try {
+                const ctx = initAudioContext();
+                if (ctx.state === 'suspended') {
+                    await ctx.resume();
+                }
+                
+                // Timing constants (in milliseconds)
+                const ditDuration = 80;  // Short beep (dit = dot)
+                const dahDuration = ditDuration * 3;  // Long beep (dah = dash)
+                const symbolGap = ditDuration;  // Pause between dots/dashes
+                const letterGap = ditDuration * 3;  // Pause between letters
+                const wordGap = ditDuration * 7;  // Pause between words
+                
+                // Go through each symbol and play it
+                for (let i = 0; i < morse.length; i++) {
+                    const symbol = morse[i];
+                    
+                    if (symbol === '.') {
+                        await playBeep(600, ditDuration);
+                        await sleep(symbolGap);
+                    } else if (symbol === '-') {
+                        await playBeep(600, dahDuration);
+                        await sleep(symbolGap);
+                    } else if (symbol === ' ') {
+                        await sleep(letterGap);
+                    } else if (symbol === '/') {
+                        await sleep(wordGap);
+                    }
+                }
+            } catch (error) {
+                console.error("Error playing Morse code:", error);
+            }
+        }
+
+        // Create a single beep sound
+        function playBeep(frequency, duration) {
+            return new Promise(resolve => {
+                try {
+                    const ctx = initAudioContext();
+                    const oscillator = ctx.createOscillator();  // Creates the tone
+                    const gainNode = ctx.createGain();  // Controls volume
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    
+                    oscillator.frequency.value = frequency;  // Pitch of the beep
+                    oscillator.type = 'sine';  // Smooth sound wave
+                    
+                    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+                    
+                    oscillator.start(ctx.currentTime);
+                    oscillator.stop(ctx.currentTime + duration / 1000);
+                    
+                    setTimeout(resolve, duration);
+                } catch (error) {
+                    console.error("Error in playBeep:", error);
+                    setTimeout(resolve, duration);
+                }
+            });
+        }
+
+        // Wait for a specified time (helper function)
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // ============================================
+        // GAME LOGIC
+        // ============================================
+        
+        // Game state variables - these track what's happening in the game
+        let currentScenario = '';  // Which ship are we on?
+        let currentMessageIndex = 0;  // Which message are we on?
+        let correctDecisions = 0;  // How many correct choices?
+        let wrongDecisions = 0;  // How many wrong choices?
+        let gameActive = false;  // Is the game running?
+        
+        // ============================================
+        // CARPATHIA SCENARIO - You're Harold Cottam
+        // ============================================
+        const carpathiaScenario = [
+            {
+                morse: textToMorse("CQD CQD SOS SOS TITANIC POSITION 41 46 N 50 14 W REQUIRE IMMEDIATE ASSISTANCE"),
+                english: "📡 INCOMING TRANSMISSION from MGY (Titanic):\n\n\"CQD CQD SOS SOS - This is Titanic. Position 41°46'N 50°14'W. We require immediate assistance. Have struck iceberg. Sinking by the head.\"",
+                choices: [
+                    { text: "🚨 Alert Captain Rostron immediately - Full steam ahead!", correct: true },
+                    { text: "📝 Acknowledge message and calculate distance", correct: true },
+                    { text: "📻 Request more information about the situation", correct: true },
+                    { text: "⏰ Wait until morning - it's probably not serious", correct: false },
+                    { text: "🛏️ Ignore - someone else will respond", correct: false }
+                ],
+                correctResponse: "✓ EXCELLENT! You immediately alerted Captain Rostron. He ordered the ship to turn around and race at top speed through dangerous ice fields. Your quick action saved lives!",
+                wrongResponse: "✗ WRONG DECISION! Every minute counts! The Carpathia was 58 miles away - 3.5 hours at full speed. Delay could mean lives lost.",
+                historicalFact: "In reality, Harold Cottam had just finished his shift and was taking off his headphones when he heard Titanic's distress call. He immediately woke Captain Rostron, who ordered full speed ahead through the ice field - a very dangerous decision that saved 705 lives."
+            },
+            {
+                morse: textToMorse("CARPATHIA WE ARE PUTTING PASSENGERS OFF IN BOATS COME AS QUICKLY AS POSSIBLE"),
+                english: "📡 URGENT from Titanic:\n\n\"We are putting passengers off in boats. Engine room flooded. Come as quickly as possible.\"",
+                choices: [
+                    { text: "📻 Send: 'Coming hard. Expect to arrive in 3 hours'", correct: true },
+                    { text: "🔥 Order all crew to prepare hot drinks and blankets", correct: true },
+                    { text: "🚨 Alert all nearby ships to assist", correct: true },
+                    { text: "❓ Ask Titanic to confirm they're really sinking", correct: false },
+                    { text: "⏳ Maintain current speed to be safe", correct: false }
+                ],
+                correctResponse: "✓ PERFECT! Captain Rostron ordered extra lookouts, turned off heating to maximize steam for the engines, and prepared the ship to receive survivors. Every crew member was mobilized.",
+                wrongResponse: "✗ BAD CHOICE! The Carpathia pushed her engines beyond their design limits, reaching 17 knots (normally 14 knots maximum). Time was critical!",
+                historicalFact: "Captain Rostron ordered his ship to go faster than it had ever gone before. He had crew prepare medical supplies, blankets, hot soup, and even had rope ladders and cargo nets lowered down the ship's sides for rescue."
+            },
+            {
+                morse: textToMorse("FRANKFURT STAND BY"),
+                english: "📡 From Titanic to another ship (Frankfurt):\n\n\"Stand by.\" Then... silence.\n\nIt's been 30 minutes with no signal from Titanic. You're still racing through ice fields in the dark.",
+                choices: [
+                    { text: "🔦 Order extra lookouts to watch for lifeboats and ice", correct: true },
+                    { text: "📻 Keep listening - they might transmit again", correct: true },
+                    { text: "⚡ Maintain full speed ahead", correct: true },
+                    { text: "🛑 Slow down - it's too dangerous", correct: false },
+                    { text: "🔙 Turn back - they must have been rescued", correct: false }
+                ],
+                correctResponse: "✓ BRAVE DECISION! Despite the danger, Carpathia continued at full speed. Captain Rostron posted extra lookouts and navigated through the ice field in complete darkness.",
+                wrongResponse: "✗ TERRIBLE CHOICE! The silence from Titanic meant her power had failed - she was sinking! Those people in lifeboats needed you NOW.",
+                historicalFact: "Titanic's last transmission was at 2:17 AM. She sank at 2:20 AM. The Carpathia navigated through the same ice field that sank Titanic, at high speed, in the dark. It was incredibly dangerous but necessary."
+            },
+            {
+                morse: textToMorse("ROCKETS SIGHTED AHEAD"),
+                english: "📡 LOOKOUT REPORTS:\n\n\"Green distress rockets sighted ahead! Approximately 20 miles.\"",
+                choices: [
+                    { text: "🚀 Fire rockets to show survivors you're coming", correct: true },
+                    { text: "⚡ Push engines to maximum - lives depend on it", correct: true },
+                    { text: "🔦 Prepare all lights and rescue equipment", correct: true },
+                    { text: "🤔 Investigate carefully from a distance", correct: false },
+                    { text: "📻 Try contacting other ships first", correct: false }
+                ],
+                correctResponse: "✓ HEROIC! You fired rockets every 15 minutes so survivors would know help was coming. Carpathia arrived at 3:30 AM and began rescuing people from lifeboats.",
+                wrongResponse: "✗ POOR JUDGMENT! People in lifeboats were freezing. The water temperature was 28°F - they needed immediate rescue!",
+                historicalFact: "Carpathia arrived at 3:30 AM, 1 hour and 10 minutes after Titanic sank. They rescued 705 survivors from 20 lifeboats. Many survivors later said seeing Carpathia's rockets gave them hope in their darkest hour."
+            },
+            {
+                morse: textToMorse("RESCUE COMPLETE 705 SOULS ABOARD"),
+                english: "📡 CAPTAIN'S REPORT:\n\nRescue operations complete. 705 survivors aboard. Titanic completely gone. Many bodies in the water. What are your orders?",
+                choices: [
+                    { text: "📻 Send passenger list to White Star Line", correct: true },
+                    { text: "🏥 Report medical needs and request supplies", correct: true },
+                    { text: "🗽 Set course for New York with survivors", correct: true },
+                    { text: "🔍 Spend time searching for more survivors", correct: false },
+                    { text: "📰 Send detailed story to newspapers", correct: false }
+                ],
+                correctResponse: "✓ COMPASSIONATE AND CORRECT! You helped save 705 lives. The Carpathia took survivors to New York, arriving on April 18th. You are a hero!",
+                wrongResponse: "✗ WRONG PRIORITY! In the freezing water, no one could survive more than 15-30 minutes. The living needed care and the families needed to know who survived.",
+                historicalFact: "Harold Cottam stayed at his wireless set for hours, sending names of survivors to shore. Captain Rostron and the crew of Carpathia were hailed as heroes. Cottam received a medal from the survivors for his quick action that night."
+            }
+        ];
+        
+        // ============================================
+        // TITANIC SCENARIO - You're Jack Phillips
+        // ============================================
+        const titanicScenario = [
+            {
+                morse: textToMorse("MSG FROM MESABA WE HAVE SEEN MUCH HEAVY PACK ICE AND GREAT NUMBER LARGE ICEBERGS LATITUDE 42 N TO 41 25 N LONGITUDE 49 W TO 50 30 W"),
+                english: "📡 INCOMING from SS Mesaba:\n\n\"We have seen much heavy pack ice and great number large icebergs. Latitude 42°N to 41°25'N, Longitude 49°W to 50°30'W.\"\n\nYou're very busy with passenger messages. What do you do?",
+                choices: [
+                    { text: "🚨 Immediately deliver to Captain Smith on the bridge", correct: true },
+                    { text: "📝 Mark as urgent and deliver within the hour", correct: true },
+                    { text: "⚠️ Post warning near bridge for officers to see", correct: true },
+                    { text: "📄 File it with other routine messages", correct: false },
+                    { text: "⏰ Finish passenger messages first - deliver later", correct: false }
+                ],
+                correctResponse: "✓ SMART! Ice warnings must reach the bridge immediately. The ship's safety depends on officers knowing about ice fields ahead!",
+                wrongResponse: "✗ CRITICAL ERROR! This ice warning covered the exact area where Titanic would hit the iceberg. This message needed immediate attention!",
+                historicalFact: "In reality, Jack Phillips was overwhelmed with passenger messages (the wireless was broken earlier that day). The Mesaba warning never made it to the bridge. It described the exact ice field where Titanic would strike the iceberg just hours later."
+            },
+            {
+                morse: textToMorse("MSG FROM CALIFORNIAN SAY OLD MAN WE ARE STOPPED AND SURROUNDED BY ICE"),
+                english: "📡 VERY CLOSE TRANSMISSION from SS Californian (sounds extremely loud in your headphones!):\n\n\"Say, old man, we are stopped and surrounded by ice.\"\n\nYou're in the middle of sending a long passenger message to Cape Race. What do you do?",
+                choices: [
+                    { text: "✋ Pause your message and acknowledge the warning", correct: true },
+                    { text: "📋 Note the warning and deliver to bridge immediately", correct: true },
+                    { text: "📻 Ask Californian their exact position", correct: true },
+                    { text: "😤 Send: 'Shut up! Keep out! I'm busy!'", correct: false },
+                    { text: "🙉 Ignore it - they interrupted you", correct: false }
+                ],
+                correctResponse: "✓ PROFESSIONAL! Even when busy, safety warnings must be acknowledged and passed on. Your courtesy might save the ship!",
+                wrongResponse: "✗ FATAL MISTAKE! The Californian was only 10-20 miles away and trying to warn you. Phillips actually did send 'Shut up!' and Californian's operator turned off his radio and went to bed. They were close enough to rescue everyone!",
+                historicalFact: "Jack Phillips was stressed and tired. He sent 'Shut up! Shut up! I'm busy!' to Californian. Offended, Californian's operator Cyril Evans turned off his radio and went to bed at 11:30 PM. Titanic hit the iceberg at 11:40 PM. Californian never heard the distress calls."
+            },
+            {
+                morse: textToMorse("CRASH FELT THROUGHOUT SHIP"),
+                english: "⚠️ SHIP STATUS:\n\nYou felt a strange vibration. The engines have stopped. An officer appears at your door: \"We've struck an iceberg. Captain wants you on standby. Don't transmit yet - assessing damage.\"\n\nWhat do you do?",
+                choices: [
+                    { text: "📻 Prepare distress message but wait for orders", correct: true },
+                    { text: "🎧 Stay at your post and listen for any calls", correct: true },
+                    { text: "⚡ Test your equipment to ensure it's working", correct: true },
+                    { text: "🚨 Immediately send SOS without permission", correct: false },
+                    { text: "🛏️ Go on deck to see what happened", correct: false }
+                ],
+                correctResponse: "✓ DISCIPLINED! You stay at your post and prepare. Following proper procedure is important, but you're ready to act instantly when ordered.",
+                wrongResponse: "✗ BAD CHOICE! You must follow the Captain's orders and stay at your post. Your job is the wireless, not investigating damage!",
+                historicalFact: "When Titanic struck the iceberg at 11:40 PM, Phillips and his assistant Harold Bride stayed at their post. Captain Smith came to the wireless room at 12:05 AM (25 minutes after impact) and told them to send the distress call. The ship had a giant gash and was flooding fast."
+            },
+            {
+                morse: textToMorse("CAPTAIN ORDERS SEND CQD POSITION 41 46 N 50 14 W"),
+                english: "🚨 CAPTAIN SMITH ENTERS YOUR ROOM:\n\n\"Send the call for assistance. Our position is 41°46'N, 50°14'W. We've struck an iceberg and need immediate help.\"\n\nWhat do you send?",
+                choices: [
+                    { text: "📡 Send: 'CQD CQD CQD - MGY - 41 46 N 50 14 W - Require assistance'", correct: true },
+                    { text: "📡 Send: 'SOS SOS SOS - Titanic sinking - Send help'", correct: true },
+                    { text: "📡 Send to all nearby ships repeatedly", correct: true },
+                    { text: "📋 Send only to the nearest ship", correct: false },
+                    { text: "⏰ Wait to see if the ship stabilizes", correct: false }
+                ],
+                correctResponse: "✓ PERFECT! You send the distress call immediately and repeatedly. CQD (Come Quick Danger) and SOS both mean emergency. Every ship that hears you might save lives!",
+                wrongResponse: "✗ HORRIBLE CHOICE! The ship is sinking! You must transmit continuously so every ship in range knows about the emergency!",
+                historicalFact: "Phillips sent CQD (the old distress signal) first. Harold Bride joked 'Send SOS - it's the new call and this may be your last chance to send it!' So Phillips alternated between CQD and SOS. This was one of the first major uses of SOS in a real emergency."
+            },
+            {
+                morse: textToMorse("CARPATHIA RESPONDS COMING HARD ETA 4 HOURS"),
+                english: "📡 RESPONSES TO YOUR DISTRESS CALL:\n\nCarpathia: 'Coming hard' (58 miles away - 4 hours)\nFrankfurt: 'What is the matter?'\nOlympic: 'On our way' (500 miles away - 24 hours)\n\nThe water is rising. Captain says you have maybe 2 hours. What do you do?",
+                choices: [
+                    { text: "⚡ Tell Carpathia to hurry - sinking by the head", correct: true },
+                    { text: "📻 Keep transmitting so ships can find you by signal", correct: true },
+                    { text: "🔊 Send position updates as ship is moving slowly", correct: true },
+                    { text: "📝 Stop transmitting - Carpathia is coming", correct: false },
+                    { text: "🎧 Focus on Olympic - she's Titanic's sister ship", correct: false }
+                ],
+                correctResponse: "✓ HEROIC! You stay at your post, continuously transmitting. Your signals guide rescuers to the lifeboats. You're a true professional!",
+                wrongResponse: "✗ DEADLY ERROR! Carpathia is 4 hours away but the ship is sinking in 2 hours! You must keep transmitting so they can find the lifeboats in the dark ocean!",
+                historicalFact: "Phillips transmitted continuously for over 2 hours as the ship sank. The power was failing, and water was rising toward the wireless room. He gave Carpathia exact positions so they could find the lifeboats. Olympic was too far away to help despite being Titanic's sister ship."
+            },
+            {
+                morse: textToMorse("CAPTAIN RELEASES YOU FROM DUTY SAVE YOURSELVES"),
+                english: "⚠️ FINAL MOMENTS:\n\nThe ship is tilting severely. Water is on E-Deck. Captain Smith enters: \"Men, you have done your full duty. You can do no more. Now it's every man for himself.\"\n\nYour power is failing. What do you do?",
+                choices: [
+                    { text: "📡 Send final CQD with position until power fails", correct: true },
+                    { text: "🦺 Put on lifejacket and try to find a lifeboat", correct: true },
+                    { text: "🤝 Help your assistant Harold Bride to safety", correct: true },
+                    { text: "🎧 Stay at wireless sending until the very end", correct: false },
+                    { text: "💰 Gather your personal belongings", correct: false }
+                ],
+                correctResponse: "✓ You did your duty with honor. Thanks to your transmissions, Carpathia knew exactly where to find the lifeboats. 705 people survived because of your work!",
+                wrongResponse: "✗ Your duty is done. The Captain released you. You must try to survive - your skills are needed in the future!",
+                historicalFact: "Jack Phillips stayed at his post until the power failed at 2:17 AM. He sent his last message just 3 minutes before Titanic sank at 2:20 AM. He made it to Collapsible Lifeboat B but died of exposure in the freezing water. Harold Bride survived. Phillips was 25 years old. He was posthumously awarded a medal for his bravery."
+            }
+        ];
+
+        // ============================================
+        // GAME FUNCTIONS
+        // ============================================
+        
+        // Start the game with chosen scenario
+        function startGame(scenario) {
+            console.log("🎮 Starting game as:", scenario);
+            
+            // Initialize audio on user interaction
+            initAudioContext();
+            
+            currentScenario = scenario;
+            currentMessageIndex = 0;
+            correctDecisions = 0;
+            wrongDecisions = 0;
+            gameActive = true;
+            
+            // Hide scenario selection, show game
+            document.getElementById('scenarioSelect').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            
+            updateScoreDisplay();
+        }
+        
+        // Show the next message in the scenario
+        function nextMessage() {
+            // Get the right scenario based on which ship we chose
+            const scenario = currentScenario === 'carpathia' ? carpathiaScenario : titanicScenario;
+            
+            // Check if we've finished all messages
+            if (currentMessageIndex >= scenario.length) {
+                endGame();
+                return;
+            }
+            
+            // Get the current message
+            const message = scenario[currentMessageIndex];
+            
+            console.log("📨 Showing message", currentMessageIndex + 1, "of", scenario.length);
+            
+            // Display the Morse code
+            document.getElementById('morseDisplay').textContent = message.morse;
+            
+            // Display the English translation
+            document.getElementById('englishDisplay').textContent = message.english;
+            
+            // Play the Morse code sound!
+            playMorse(message.morse);
+            
+            // Show the choice buttons
+            showChoices(message.choices, message.correctResponse, message.wrongResponse);
+            
+            // Update score display
+            currentMessageIndex++;
+            updateScoreDisplay();
+        }
+        
+        // Display the choice buttons
+        function showChoices(choices, correctResponse, wrongResponse) {
+            const container = document.getElementById('choicesContainer');
+            container.innerHTML = ''; // Clear old buttons
+            
+            // Shuffle the choices so they're in random order
+            const shuffled = [...choices].sort(() => Math.random() - 0.5);
+            
+            // Create a button for each choice
+            shuffled.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.textContent = choice.text;
+                
+                // When clicked, check if it's correct or wrong
+                button.onclick = () => handleChoice(choice.correct, correctResponse, wrongResponse);
+                
+                container.appendChild(button);
+            });
+        }
+        
+        // Handle when player makes a choice
+        function handleChoice(isCorrect, correctResponse, wrongResponse) {
+            console.log("Player chose:", isCorrect ? "CORRECT" : "WRONG");
+            
+            // Update the score
+            if (isCorrect) {
+                correctDecisions++;
+            } else {
+                wrongDecisions++;
+            }
+            updateScoreDisplay();
+            
+            // Show feedback
+            const englishDisplay = document.getElementById('englishDisplay');
+            englishDisplay.textContent = isCorrect ? correctResponse : wrongResponse;
+            
+            // Visual feedback on all buttons
+            const buttons = document.querySelectorAll('.choice-btn');
+            buttons.forEach(btn => {
+                btn.disabled = true; // Disable all buttons
+                
+                // Find which buttons were correct/wrong
+                const scenario = currentScenario === 'carpathia' ? carpathiaScenario : titanicScenario;
+                const message = scenario[currentMessageIndex - 1];
+                
+                message.choices.forEach(choice => {
+                    if (btn.textContent === choice.text) {
+                        if (choice.correct) {
+                            btn.classList.add('correct');
+                        } else {
+                            btn.classList.add('wrong');
+                        }
+                    }
+                });
+            });
+            
+            // Show "Next Message" button after a delay
+            setTimeout(() => {
+                const container = document.getElementById('choicesContainer');
+                container.innerHTML = '<button class="choice-btn" onclick="nextMessage()">📡 NEXT MESSAGE</button>';
+            }, 3000);
+        }
+        
+        // Update the score display
+        function updateScoreDisplay() {
+            document.getElementById('messageCount').textContent = currentMessageIndex;
+            document.getElementById('correctCount').textContent = correctDecisions;
+            document.getElementById('wrongCount').textContent = wrongDecisions;
+        }
+        
+        // End the game and show results
+        function endGame() {
+            console.log("🏁 Game Over!");
+            
+            gameActive = false;
+            
+            // Hide game container, show game over screen
+            document.getElementById('gameContainer').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'block';
+            
+            // Calculate success
+            const scenario = currentScenario === 'carpathia' ? carpathiaScenario : titanicScenario;
+            const totalMessages = scenario.length;
+            const successRate = Math.round((correctDecisions / totalMessages) * 100);
+            
+            // Determine title and message based on performance
+            let title, message, historicalMessage;
+            
+            if (successRate >= 80) {
+                title = "⭐ HEROIC PERFORMANCE! ⭐";
+                message = `You made ${correctDecisions} out of ${totalMessages} correct decisions (${successRate}%)! Your actions saved countless lives. You are a true hero of maritime history!`;
+            } else if (successRate >= 60) {
+                title = "✓ MISSION ACCOMPLISHED";
+                message = `You made ${correctDecisions} out of ${totalMessages} correct decisions (${successRate}%). You did your duty honorably, though some decisions could have been better. Many lives were saved thanks to your efforts.`;
+            } else if (successRate >= 40) {
+                title = "⚠️ MISSION INCOMPLETE";
+                message = `You made ${correctDecisions} out of ${totalMessages} correct decisions (${successRate}%). Some critical errors were made. In a real disaster, these mistakes could cost lives. Study the historical facts and try again!`;
+            } else {
+                title = "❌ DISASTER";
+                message = `You made only ${correctDecisions} out of ${totalMessages} correct decisions (${successRate}%). Too many wrong choices led to catastrophic results. Every decision matters in an emergency. Learn from history and try again!`;
+            }
+            
+            // Add scenario-specific historical message
+            if (currentScenario === 'carpathia') {
+                historicalMessage = "🚢 CARPATHIA'S REAL STORY: Harold Cottam, just 21 years old, heard Titanic's distress call purely by chance - he had finished his shift and was about to take off his headphones. His quick thinking and Captain Rostron's brave decision to race through the ice field at top speed saved 705 lives. Carpathia was the only ship close enough to arrive in time. Cottam was awarded a medal and £250 by Titanic survivors. He later said it was 'just doing his duty.'";
+            } else {
+                historicalMessage = "📡 JACK PHILLIPS' REAL STORY: Jack Phillips was 25 years old and working his dream job as senior wireless operator on the world's most luxurious ship. On that fateful night, he worked continuously for over 2 hours as the ship sank around him, sending distress signals that saved 705 lives. He stayed at his post until the power failed at 2:17 AM, just 3 minutes before Titanic sank. He made it onto Collapsible Lifeboat B but died of exposure in the freezing water. Harold Bride survived and called Phillips 'a brave man.' Phillips was posthumously honored for his heroism.";
+            }
+            
+            document.getElementById('gameOverTitle').textContent = title;
+            document.getElementById('gameOverStats').innerHTML = `
+                <p style="font-size: 18px; margin: 20px 0;">${message}</p>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 5px; margin: 20px 0;">
+                    <strong>Final Statistics:</strong><br>
+                    Total Messages: ${totalMessages}<br>
+                    Correct Decisions: ${correctDecisions}<br>
+                    Wrong Decisions: ${wrongDecisions}<br>
+                    Success Rate: ${successRate}%
+                </div>
+            `;
+            document.getElementById('historicalFact').innerHTML = `
+                <strong>📚 HISTORICAL TRUTH:</strong><br><br>
+                ${historicalMessage}
+            `;
+        }
+    </script>
+</body>
+</html>
